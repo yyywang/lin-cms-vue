@@ -10,18 +10,24 @@ export default {
     if (typeof connection === 'object') {
       opts = connection
       connection = ''
+    } else if (typeof connection === 'string') {
+      opts.autoconnect = true
     }
     let observer = null
 
     opts.$setInstance = wsInstance => {
       Vue.prototype.$socket = wsInstance
     }
-    Vue.prototype.$connect = (connectionUrl = connection, connectionOpts = opts) => {
-      connectionOpts.$setInstance = opts.$setInstance
-      observer = new Observer(connectionUrl, connectionOpts)
+    if (opts.autoconnect) {
+      observer = new Observer(connection, opts)
       Vue.prototype.$socket = observer.WebSocket
+    } else {
+      Vue.prototype.$connect = (connectionUrl = connection, connectionOpts = opts) => {
+        connectionOpts.$setInstance = opts.$setInstance
+        observer = new Observer(connectionUrl, connectionOpts)
+        Vue.prototype.$socket = observer.WebSocket
+      }
     }
-
     Vue.prototype.$disconnect = () => {
       if (observer && observer.reconnection) {
         observer.reconnection = false
